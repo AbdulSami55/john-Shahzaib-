@@ -107,18 +107,13 @@ qa = RetrievalQA.from_chain_type(
     retriever=docsearch.as_retriever(search_kwargs={'k': 2})
 )
 
-def enable_cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
     
  
 def get_message(request):
     if request.method == 'GET':
         res = qa.run(request.args.get('message'))
         response =  Response(json.dumps(res), content_type='application/json')
-        return enable_cors(response)
+        return response
 
 
 

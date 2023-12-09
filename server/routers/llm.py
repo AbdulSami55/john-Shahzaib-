@@ -1,10 +1,5 @@
-import json
-import pinecone
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
-import os
-from langchain.chains import RetrievalQA
-from flask import Response
+
+
 import time
 from typing import Any, List, Mapping, Optional
 from langchain.callbacks.manager import CallbackManagerForLLMRun
@@ -57,7 +52,7 @@ class RunpodServerlessLLM(LLM):
             "prompt": prompt,
             "sampling_params": {
            "max_tokens": 512,
-            "tempreature":0.7
+            "tempreature":1
        }
             
         }
@@ -81,44 +76,3 @@ class RunpodServerlessLLM(LLM):
             time.sleep(1)
 
         return out["output"]['text'][0]
-    
-llm = RunpodServerlessLLM(
-    pod_id="uqfisnj4bkixcm",
-    api_key="KXG7WNCE7Y41TNB4NI6JLZVVIHDFPBTIJ8UKJJFI",
-)
-
-# Replace this with your Pinecone API key
-API_KEY = "a4eee9dd-ba9d-41b3-b0a7-0cd6b069ff76"
-start_key="sk-ykOlX7M"
-end_key="ZmpNaOJ79EB"
-os.environ['OPENAI_API_KEY']=f'{start_key}ZvQqFXZckMN54T3BlbkFJiTJ32jnPh{end_key}'
-embeddings = OpenAIEmbeddings()
-pinecone.init(api_key=API_KEY,
-              environment="gcp-starter")
-              
-index_name = 'dataindex'
-
-index = pinecone.Index(index_name)
-
-docsearch = Pinecone(index,embeddings,'text')
-qa = RetrievalQA.from_chain_type(
-    llm=llm,
-    chain_type="stuff",
-    retriever=docsearch.as_retriever(search_kwargs={'k': 2})
-)
-
-def enable_cors(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    return response
-    
- 
-def get_message(request):
-    if request.method == 'GET':
-        res = qa.run(request.args.get('message'))
-        response =  Response(json.dumps(res), content_type='application/json')
-        return enable_cors(response)
-
-
-

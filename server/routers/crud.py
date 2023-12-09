@@ -1,11 +1,17 @@
-import json
-import pinecone
-from langchain.embeddings.openai import OpenAIEmbeddings
+
+import asyncio
+from typing import AsyncIterable
+from langchain.schema import HumanMessage,AIMessage
+from langchain.callbacks import AsyncIteratorCallbackHandler
+from .schemas import ChatHistory
+from langchain.embeddings import OpenAIEmbeddings
 import os
-from flask import Response
 import PyPDF2
 from io import BytesIO
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import pinecone
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import ConversationBufferMemory,ChatMessageHistory
 
 
 API_KEY = "a4eee9dd-ba9d-41b3-b0a7-0cd6b069ff76"
@@ -20,9 +26,33 @@ index_name = 'dataindex'
 
 index = pinecone.Index(index_name)
 
+def chatStreamingResponse(chat:ChatHistory,llm,docsearch):
+    # try:
+       
+    chat_history=[]
+    for data in chat.History:
+        chat_history.append((data.User,data.AI))
+    # memory=ConversationBufferMemory(chat_memory=chat_history)
+    qa = ConversationalRetrievalChain.from_llm(
+    llm=llm,
+    chain_type="stuff",
+    retriever=docsearch.as_retriever(search_kwargs={'k': 2})
+    )
+    res = qa.run({'question':chat.UserMessage,'chat_history':chat_history})
+    return res
 
-def get_response(request):
-    file = request.files["document"]
+
+    # except Exception as e:
+    #     print(f"Caught exception: {e}")
+
+
+
+
+
+
+
+def add_embeddings(file):
+    file = file.document
     if file:
         pdf = file.read()
         pdf_file = BytesIO(pdf)
@@ -39,7 +69,7 @@ def get_response(request):
     vectors=[]
     
     record_metadatas = [{
-        "chunk": j, "text": text, "file_name":request.files["document"].filename
+        "chunk": j, "text": text, "file_name":file.filename
     } for j, text in enumerate(record_texts)]
     embeds = embeddings.embed_documents(record_texts)
     count=0
@@ -48,6 +78,6 @@ def get_response(request):
         count+=1
     index.upsert(vectors)
 
-    return Response(json.dumps({"status": "success"}), content_type='application/json')
+    return {"status": "success"}
 
 
