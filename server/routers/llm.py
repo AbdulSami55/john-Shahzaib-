@@ -52,7 +52,7 @@ class RunpodServerlessLLM(LLM):
             "prompt": prompt,
             "sampling_params": {
            "max_tokens": 512,
-            "tempreature":1
+            "tempreature":0.7
        }
             
         }
