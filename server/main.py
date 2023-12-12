@@ -12,9 +12,19 @@ from routers import crud
 app = FastAPI() 
 
     
-llm = RunpodServerlessLLM(
-    pod_id="uqfisnj4bkixcm",
-    api_key="KXG7WNCE7Y41TNB4NI6JLZVVIHDFPBTIJ8UKJJFI",
+# llm = RunpodServerlessLLM(
+#     pod_id="uqfisnj4bkixcm",
+#     api_key="KXG7WNCE7Y41TNB4NI6JLZVVIHDFPBTIJ8UKJJFI",
+# )
+
+from langchain.llms import HuggingFaceTextGenInference
+
+SERVER_URL="https://qfle7l1jguvllr-80.proxy.runpod.net"
+llm = HuggingFaceTextGenInference(
+    inference_server_url=SERVER_URL,
+    max_new_tokens=512,
+    temperature=0.6,
+    top_p=0.95
 )
 
 # Replace this with your Pinecone API key
@@ -35,14 +45,14 @@ docsearch = Pinecone(index,embeddings,'text')
 @app.post("/chat")
 async def get_message(chat:ChatHistory):
     response = crud.chatStreamingResponse(chat,llm,docsearch=docsearch)
-    return response
+    return StreamingResponse(response, media_type='text/event-stream')
     
 @app.post("/upload-docs")
 async def upload_document(file:UploadFile=File(...)):
     return crud.add_embeddings(file)
 
 if __name__=="__main__":
-    uvicorn.run(app,host="192.168.82.125",port=8000)
+    uvicorn.run(app,host="192.168.18.84",port=8000)
 
 
 
