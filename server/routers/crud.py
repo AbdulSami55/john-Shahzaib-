@@ -45,7 +45,10 @@ async def chatStreamingResponse(chat:ChatHistory,llm,docsearch):
         Chat = [[]]
         # chat_history = "".join([f"User:{data.User} \n\n AI:{data.AI} \n\n" for data in chat.History])
         context = docsearch.similarity_search(chat.UserMessage)
-        content ="".join([d.page_content for d in context])
+        print(context)
+        content ="\n".join([f"Source: {d.metadata['source']}\n Detail: {d.page_content}" for d in context])
+        print(content)
+
         # client = Client(SERVER_URL, timeout=60)
         # text = ""
         # prompt =generate_prompt(system_prompt=f"You are a helpful assistant your job is to read context and answer to user. ### Context:{content} \n\n. You can also read chat history to get context just for user question answer. ### Chat History:{chat_history}",prompt=chat.UserMessage)
@@ -61,7 +64,7 @@ async def chatStreamingResponse(chat:ChatHistory,llm,docsearch):
                 HumanMessage(content=data.User),
                 AIMessage(content=data.AI)]
             Chat[0].extend(ls)
-        Chat[0].extend([HumanMessage(content=f"Must Read all this context and then answer to user. ### Context:{content} \n\n ### User Message:{chat.UserMessage}")])
+        Chat[0].extend([HumanMessage(content=f"Must Read all this context and then answer to user. ### Context:{content} \n\n ### User Message:{chat.UserMessage} Make SUre at the end attach source of countext from where you get answer. ### Answer:")])
 
     
         
